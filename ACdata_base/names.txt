@@ -1,0 +1,10 @@
+1___diwani           /  
+2___naskh            /
+3___parsi            x
+4___rekaa            x
+5___thuluth          /
+6___maghribi         x
+7___kufi             x
+8___mohakek          x
+9___Squar-kufic      x'
+
