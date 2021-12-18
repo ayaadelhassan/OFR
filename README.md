@@ -1,6 +1,8 @@
 # OFR
 
 ### Papers for features extraction
+  https://www.sciencedirect.com/science/article/abs/pii/S0167865509002906
+
   https://www.kau.edu.sa/Files/320/Researches/70207_43181.pdf
   
   https://sci-hub.mksa.top/10.1109/icpr.2010.532
