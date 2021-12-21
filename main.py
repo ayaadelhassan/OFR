@@ -11,5 +11,5 @@ for idx,img_dir in enumerate(dirs):
     img_dir = input_dir + img_dir
 
     img = cv2.imread(img_dir, cv2.IMREAD_GRAYSCALE)
-    shadowFreeImg = RemoveShadow(img,True)
-    binarizedImg = Binarize(shadowFreeImg,True,pre)
+    # shadowFreeImg = RemoveShadow(img,True)
+    binarizedImg =  Binarize_Histogram(img,pre)

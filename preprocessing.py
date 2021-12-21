@@ -36,3 +36,13 @@ def Binarize(img_gray,debug=False,name=""):
         cv2.imwrite(f"output/{name}_final_isodata.png",final_isodata)
         #cv2.imwrite(f"output/{name}_final_local.png",final_local)
     return final_yen,final_otsu
+
+def Binarize_Histogram(img_gray,name=""):
+    #thres_otsu = threshold_otsu(img_gray)
+    ret2,thresholded_image = cv2.threshold(img_gray,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    hist = cv2.calcHist([thresholded_image],[0],None,[256],[0,256])
+    if hist[255]< hist[0]:
+        thresholded_image = 255-thresholded_image
+    cv2.imwrite(f"output/{name}_final_otsu.png",thresholded_image)
+    
+    return img_gray
