@@ -43,6 +43,23 @@ def Binarize_Histogram(img_gray,name=""):
     hist = cv2.calcHist([thresholded_image],[0],None,[256],[0,256])
     if hist[255]< hist[0]:
         thresholded_image = 255-thresholded_image
-    cv2.imwrite(f"output/{name}_final_otsu.png",thresholded_image)
+    #cv2.imwrite(f"output/{name}_final_otsu.png",thresholded_image)
     
-    return img_gray
+    return thresholded_image
+
+# Keeps only the diacritics
+def diacritics(img_binarized, name=""):
+    # Copying the image
+    img = img_binarized.copy()
+
+    # Horizontal projection
+    hor_proj = np.sum(img, axis=1)
+    baseline = np.argmin(hor_proj)
+
+    # Flood fill algorithm to keep only the diacritics
+    h, w = img.shape
+    for x in range(w-1):
+        if img[baseline, x] == 255 and img[baseline, x+1] == 0:
+            cv2.floodFill(img, None, (x+1, baseline), 255)
+
+    return img

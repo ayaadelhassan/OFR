@@ -13,3 +13,9 @@ for idx,img_dir in enumerate(dirs):
     img = cv2.imread(img_dir, cv2.IMREAD_GRAYSCALE)
     # shadowFreeImg = RemoveShadow(img,True)
     binarizedImg =  Binarize_Histogram(img,pre)
+
+    diacritics_only = diacritics(binarizedImg, pre)
+
+    text_only = (255 - diacritics_only) + binarizedImg
+
+    cv2.imwrite(f"output/{pre}.png",text_only)
