@@ -60,5 +60,5 @@ def LaplacianEdge(img_binary,name=""):
     ddepth = cv2.CV_16S
     img_edge = cv2.Laplacian(img_binary, ddepth, ksize=kernel_size)
     img_edge = 255 - img_edge
-    cv2.imwrite(f"output/{name}_final_otsu.png",img_edge)
+    #cv2.imwrite(f"output/{name}_final_otsu.png",img_edge)
     return img_edge
