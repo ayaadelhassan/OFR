@@ -45,4 +45,4 @@ def Binarize_Histogram(img_gray,name=""):
         thresholded_image = 255-thresholded_image
     cv2.imwrite(f"output/{name}_final_otsu.png",thresholded_image)
     
-    return img_gray
+    return thresholded_image
