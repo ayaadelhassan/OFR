@@ -1,9 +1,10 @@
 import numpy as np
 from preprocessing import *
+from features import *
 import cv2
 import os
 
-input_dir = 'ACdata_base/5/'
+input_dir = 'ACdata_base/1/'
 dirs = os.listdir(input_dir)
 for idx,img_dir in enumerate(dirs):
     print("processing img "+str(img_dir))
@@ -18,4 +19,5 @@ for idx,img_dir in enumerate(dirs):
 
     text_only = (255 - diacritics_only) + binarizedImg
 
-    cv2.imwrite(f"output/{pre}.png",text_only)
+    #cv2.imwrite(f"output/{pre}.png",diacritics_only)
+    words_orientation(text_only, pre)
