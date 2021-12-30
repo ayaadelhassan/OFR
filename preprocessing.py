@@ -1,6 +1,8 @@
 from skimage.filters import threshold_yen,threshold_otsu,threshold_mean,threshold_triangle,threshold_isodata,threshold_local
 import numpy as np
 import cv2
+from skimage.morphology import skeletonize
+
 
 def RemoveShadow(img_gray,debug=False):
     #remove noise and writting on paper to leave out onlu the illumination
@@ -43,6 +45,20 @@ def Binarize_Histogram(img_gray,name=""):
     hist = cv2.calcHist([thresholded_image],[0],None,[256],[0,256])
     if hist[255]< hist[0]:
         thresholded_image = 255-thresholded_image
-    cv2.imwrite(f"output/{name}_final_otsu.png",thresholded_image)
+    #cv2.imwrite(f"output/{name}_final_otsu.png",thresholded_image)
     
     return thresholded_image
+
+def Skeletonization(img_binary,name=""):
+    img_skeletonized = skeletonize((255-img_binary)/255)
+    img_skeletonized = 255-(img_skeletonized*255)
+    #cv2.imwrite(f"output/{name}_final_otsu.png",img_skeletonized)
+    return img_skeletonized
+
+def LaplacianEdge(img_binary,name=""):
+    kernel_size = 3
+    ddepth = cv2.CV_16S
+    img_edge = cv2.Laplacian(img_binary, ddepth, ksize=kernel_size)
+    img_edge = 255 - img_edge
+    #cv2.imwrite(f"output/{name}_final_otsu.png",img_edge)
+    return img_edge
