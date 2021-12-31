@@ -62,3 +62,20 @@ def LaplacianEdge(img_binary,name=""):
     img_edge = 255 - img_edge
     #cv2.imwrite(f"output/{name}_final_otsu.png",img_edge)
     return img_edge
+
+def cropToText(img_binary,name=""):
+    #horizontal dilation
+    img = cv2.dilate(255 - img_binary, np.ones((1,int(img_binary.shape[1]*0.3)), np.uint8))
+    #find the contours
+    contours, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    #find the biggest contour
+    areas = [cv2.contourArea(c) for c in contours]
+    max_index = np.argmax(areas)
+    cnt = contours[max_index]
+    x,y,w,h = cv2.boundingRect(cnt)
+    #draw the bounding box
+    #rect_img = cv2.rectangle(img_binary,(x,y),(x+w,y+h),(0,255,0),2)
+    #cv2.imwrite(f"output/{name}_cropped.png",rect_img)
+    #crop the image
+    img_cropped = img_binary[y:y+h,x:x+w].copy()
+    return img_cropped

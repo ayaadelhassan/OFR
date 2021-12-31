@@ -1,8 +1,10 @@
+import os
 import numpy as np
 import cv2
 from skimage.feature import hog as hogg
 from preprocessing import *
 from matplotlib import pyplot as plt
+from scipy.signal import find_peaks
 import math
 
 
@@ -136,3 +138,9 @@ def getLVL(skeleton_image, img, name=""):
     features = np.asarray(features)
     return features
    
+def getHPP(whole_text, name=""):
+    # horizontal projection
+    h_proj = np.sum(whole_text == 0, axis=1)
+    h_proj = h_proj / np.max(h_proj)
+
+    return np.histogram(h_proj,bins=30)[0]
