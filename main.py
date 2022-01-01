@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import classification_report
 from sklearn.neural_network import MLPClassifier
-from sklearn.ensemble import VotingClassifier
+from sklearn.ensemble import VotingClassifier,RandomForestClassifier
 from scipy.stats import mode
 
 
@@ -58,42 +58,45 @@ for i in range(1, 10):
 labels = np.array(labels)    
 
 
-X_train, X_test, y_train, y_test = train_test_split(HVSL_feature, labels, test_size=0.3,random_state=4, stratify=labels)
-clf_HVSL = svm.SVC()
+X_train, X_test, y_train, y_test = train_test_split(HVSL_feature, labels, test_size=0.3,random_state=10, stratify=labels)
+clf_HVSL = svm.SVC(probability=True)
 clf_HVSL.fit(X_train, y_train)
-predicted_HVSL = clf_HVSL.predict(X_test)
+predicted_HVSL = clf_HVSL.predict_proba(X_test)
 
-X_train, X_test, y_train, y_test = train_test_split(HPP_features, labels, test_size=0.3,random_state=4, stratify=labels)
-clf_HPP = svm.SVC()
+X_train, X_test, y_train, y_test = train_test_split(HPP_features, labels, test_size=0.3,random_state=10, stratify=labels)
+clf_HPP = svm.SVC(probability=True)
 clf_HPP.fit(X_train, y_train)
-predicted_HPP = clf_HPP.predict(X_test)
+predicted_HPP = clf_HPP.predict_proba(X_test)
 
-X_train, X_test, y_train, y_test = train_test_split(Stats_features, labels, test_size=0.3,random_state=4, stratify=labels)
-clf_Stats = MLPClassifier(alpha=1e-05, hidden_layer_sizes=(9,18),random_state=1,solver='lbfgs',max_iter=10000)
+X_train, X_test, y_train, y_test = train_test_split(Stats_features, labels, test_size=0.3,random_state=10, stratify=labels)
+clf_Stats = MLPClassifier(alpha=1e-05, hidden_layer_sizes=(9,18),random_state=1,solver='lbfgs',max_iter=10000,)
 clf_Stats.fit(X_train,y_train)
-predicted_Stats = clf_Stats.predict(X_test)
+predicted_Stats = clf_Stats.predict_proba(X_test)
 
-X_train, X_test, y_train, y_test = train_test_split(TOS_features, labels, test_size=0.3,random_state=4, stratify=labels)
-clf_TOS = svm.SVC()
+X_train, X_test, y_train, y_test = train_test_split(TOS_features, labels, test_size=0.3,random_state=10, stratify=labels)
+clf_TOS = svm.SVC(probability=True) #10 is the best -> 92%
 clf_TOS.fit(X_train,y_train)
-predicted_TOS = clf_TOS.predict(X_test)
+# predicted_TOS = np.argmax(clf_TOS.predict_proba(X_test), axis=1) + 1
+predicted_TOS = clf_TOS.predict_proba(X_test)
 
-X_train, X_test, y_train, y_test = train_test_split(LVL_features, labels, test_size=0.3,random_state=4, stratify=labels)
-clf_LVL = svm.SVC()
+X_train, X_test, y_train, y_test = train_test_split(LVL_features, labels, test_size=0.3,random_state=10, stratify=labels)
+clf_LVL = svm.SVC(probability=True)
 clf_LVL.fit(X_train,y_train)
-predicted_LVL = clf_LVL.predict(X_test)
+predicted_LVL = clf_LVL.predict_proba(X_test)
 
-stacked = np.vstack((predicted_Stats,predicted_TOS,predicted_HPP, predicted_HVSL, predicted_LVL))
-predicted = mode(stacked)[0][0]
-print(predicted)
+summation = predicted_Stats + predicted_HVSL + predicted_TOS 
+# stacked = np.vstack((predicted_Stats,predicted_TOS,predicted_HPP, predicted_HVSL, predicted_LVL))
+predicted = np.argmax(summation, axis=1) + 1
+print(predicted.shape)
+print(y_test.shape)
 
-# predicted = mode().T,axis=0)
+# predicted = mode().T
 # print(predicted_HVSL.shape)
 # print(predicted)
 # print(y_test.shape)
-#voting_clf = VotingClassifier(estimators=[('clf_HVSL', clf_HVSL), ('clf_Stats', clf_Stats)], voting='hard')
-#voting_clf.fit(X_train, y_train)
-#predicted = voting_clf.predict(X_test)
+# voting_clf = VotingClassifier(estimators=[('clf_HVSL', clf_HVSL), ('clf_Stats', clf_Stats)], voting='hard')
+# voting_clf.fit(X_train, y_train)
+# predicted = voting_clf.predict(X_test)
 
 # acc = accuracy_score(y_test, preds)
 # f1 = f1_score(y_test, preds, average='weighted')
