@@ -1,12 +1,14 @@
-import os
 import numpy as np
 import cv2
-from skimage.feature import hog as hogg
 from preprocessing import *
-from matplotlib import pyplot as plt
-from scipy.signal import find_peaks
 import math
-
+from skimage.transform import resize
+from skimage.feature import hog
+import numpy as np
+import cv2
+from skimage.transform import resize
+import numpy as np
+from preprocessing import *
 
 def dist(x, y, x1, y1):
    return ((x - x1) ** 2 + (y - y1) ** 2) ** (0.5)
@@ -144,3 +146,172 @@ def getHPP(whole_text, name=""):
     h_proj = h_proj / np.max(h_proj)
 
     return np.histogram(h_proj,bins=30)[0]
+# ----------------------------------------------------------------------------------------------------------------------
+def getTOS(imgGray):
+    resized_img = resize(imgGray, (110, 200))
+    fd, hog_image = hog(resized_img, orientations=9, pixels_per_cell=(8, 8),cells_per_block=(2, 2), visualize=True)
+    return fd
+
+def get_Reference_Line(binarized):
+    hist = np.sum(1-binarized/255,axis=1)
+    referenceline = np.argmax(hist)
+    return referenceline
+
+def get_BlackWhiteRatio(binarized):
+    hImg, wImg = binarized.shape
+    blackCount = np.sum(binarized==0)
+    whiteCount = max(1,np.sum(binarized==255))
+    return blackCount/whiteCount
+
+def get_Components(binarized):
+    contours,_ = cv2.findContours(255-binarized, cv2.RETR_EXTERNAL,  cv2.CHAIN_APPROX_NONE)
+    return contours,len(contours)
+
+def get_CountContours(contours,referenceline):
+    countAbove,countBelow=0,0
+    for cnt in contours:
+        x,y,w,h  = cv2.boundingRect(cnt)
+        if y+h <= referenceline:countAbove+=1
+        if y > referenceline:countBelow+=1
+        
+    return countAbove,countBelow
+
+def dist(x, y, x1, y1):
+    return ((x - x1)**2)**(0.5) + ((y - y1)**2) ** (0.5)
+
+def get_Orientation(contours,binarized):
+    hImg, wImg = binarized.shape
+    test = np.zeros((hImg,wImg,3))
+    test[:,:,0] = binarized
+    test[:,:,1] = binarized
+    test[:,:,2] = binarized
+    anglesSum = 0
+    for cnt in contours:
+        if cnt.shape[0] > 5:
+            x,y,_,_  = cv2.boundingRect(cnt)
+            ellipse = cv2.fitEllipse(cnt)
+            (xc,yc),(d1,d2),angle = ellipse
+            angle = 90 - angle
+            anglesSum += angle
+            cv2.putText(test,f'{int(angle)}',(x,y),0,0.25,(0,0,255)) 
+            cv2.ellipse(test, ellipse, (255,0, 255), 1, cv2.LINE_AA)
+    anglesMean = anglesSum/len(contours)
+    cv2.imwrite("withEllipses.png", test)
+    return anglesMean
+
+
+def getStatisticalHVSL(edge_image, img=None, name=""):
+    fld = cv2.ximgproc.createFastLineDetector()
+    lines = fld.detect(edge_image.astype('uint8'))
+    no_of_horizontal_lines = 0.0
+    no_of_vertical_lines = 0.0
+    for line in lines:
+        x0 = int(round(line[0][0]))
+        y0 = int(round(line[0][1]))
+        x1 = int(round(line[0][2]))
+        y1 = int(round(line[0][3]))
+        d = dist(x0, y0, x1, y1)
+        if d > 10: #You can adjust the distance
+            if np.abs(x0 - x1) >= 0 and np.abs(x0 - x1) <= 3:
+                no_of_vertical_lines += 1 
+                #cv2.line(img, (x0, y0), (x1, y1), (255, 0, 0), 1, cv2.LINE_AA)
+            if np.abs(y0 - y1) >= 0 and np.abs(y0 - y1) <= 3:
+                no_of_horizontal_lines += 1
+                #cv2.line(img, (x0, y0), (x1, y1), (0, 0, 255), 1, cv2.LINE_AA)
+    if no_of_horizontal_lines == 0:
+        no_of_horizontal_lines = 1
+    return no_of_vertical_lines,no_of_horizontal_lines
+
+
+
+def getStatsFeatures(binarized):
+    hImg, wImg = binarized.shape
+
+    referenceline = get_Reference_Line(binarized)
+    blackwhiteRatioTotal = get_BlackWhiteRatio(binarized)
+
+    imgAboveRef = binarized[:referenceline,:]
+    imgBelowRef = binarized[referenceline:,:]
+
+    blackwhiteRatioAbove = get_BlackWhiteRatio(imgAboveRef)
+    blackwhiteRatioBelow = get_BlackWhiteRatio(imgBelowRef)
+
+    contoursTotal, contoursTotalCount = get_Components(binarized)
+
+    contoursAboveCount,contoursBelowCount = get_CountContours(contoursTotal,referenceline)
+    DenistyAbove = contoursAboveCount/contoursTotalCount
+    DenistyBelow = contoursBelowCount/contoursTotalCount
+    orientation = get_Orientation(contoursTotal,binarized)
+    
+    #########aya
+    edges = LaplacianEdge(binarized)
+    
+    verticalCount,horizontalCount = getStatisticalHVSL(edges)
+    
+
+    features = [referenceline/hImg,blackwhiteRatioTotal,blackwhiteRatioAbove,blackwhiteRatioBelow,orientation,DenistyAbove,DenistyBelow,verticalCount,horizontalCount]
+    return features
+
+def dist(x, y, x1, y1):
+    return ((x - x1)**2)**(0.5) + ((y - y1)**2) ** (0.5)
+
+def getThicknessHist(skeleton,binarizedImg):
+    blackPixelsSk = np.where(skeleton==0)
+    contours,_ = cv2.findContours(255-binarizedImg, cv2.RETR_EXTERNAL,  cv2.CHAIN_APPROX_NONE)
+    boundindBoxes = [cv2.boundingRect(contour) for contour in contours]
+    thick_arr = []
+    for i in range(0,len(blackPixelsSk[0]),3):
+        y,x = blackPixelsSk[0][i],blackPixelsSk[1][i]
+
+        for idx,(xB,yB,wB,hB) in enumerate(boundindBoxes):
+            if y>=yB and x>=xB and y<=(yB+hB) and x<=(xB+wB):
+                insideContour = contours[idx] 
+                break
+
+        insideContour = insideContour.T
+
+        cols= insideContour[0][0]
+        rows= insideContour[1][0]
+        idxs = list(range(len(rows)))
+        abovePoints = []
+        belowPoints = []
+        rightPoints = []
+        leftPoints =  []
+        
+        for i,r,c in zip(idxs,rows,cols):
+            if r<y and c==x:
+                abovePoints.append(i)
+            elif  r>y and c==x:
+                belowPoints.append(i)
+            elif r==y and c>x:
+                rightPoints.append(i)
+            elif r==y and c<x:
+                leftPoints.append(i)
+                
+        if len(belowPoints):
+            minIdx = np.argmin([dist(x,y,cols[belowPoints[i]],rows[belowPoints[i]]) for i in range(len(belowPoints))])
+            nearBelow = rows[belowPoints[minIdx]],cols[belowPoints[minIdx]] 
+        else: nearBelow = y,x
+
+        if len(abovePoints):
+            minIdx = np.argmin([dist(x,y,cols[abovePoints[i]],rows[abovePoints[i]]) for i in range(len(abovePoints))])
+            nearAbove = rows[abovePoints[minIdx]],cols[abovePoints[minIdx]] 
+        else: nearAbove = y,x
+
+        if len(rightPoints): 
+            minIdx = np.argmin([dist(x,y,cols[rightPoints[i]],rows[rightPoints[i]]) for i in range(len(rightPoints))])
+            nearRight = rows[rightPoints[minIdx]],cols[rightPoints[minIdx]] 
+        else: nearRight = y,x
+
+        if len(leftPoints): 
+            minIdx = np.argmin([dist(x,y,cols[leftPoints[i]],rows[leftPoints[i]]) for i in range(len(leftPoints))])
+            nearLeft = rows[leftPoints[minIdx]],cols[leftPoints[minIdx]] 
+        else: nearLeft = y,x
+            
+        distVer = dist(nearBelow[1],nearBelow[0],nearAbove[1],nearAbove[0])
+        distHor = dist(nearRight[1],nearRight[0],nearLeft[1],nearLeft[0])
+        thickness = min(distVer,distHor)
+        thick_arr.append(thickness)
+    thick_hist,bins = np.histogram(thick_arr, 10)
+    print(thick_hist,bins)
+    return list(thick_hist)+list(bins)
