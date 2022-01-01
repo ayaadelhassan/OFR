@@ -84,7 +84,7 @@ clf_LVL = svm.SVC(probability=True)
 clf_LVL.fit(X_train,y_train)
 predicted_LVL = clf_LVL.predict_proba(X_test)
 
-summation = predicted_Stats + predicted_HVSL + predicted_TOS 
+summation = predicted_HPP + predicted_HVSL + predicted_TOS + predicted_Stats + predicted_LVL
 # stacked = np.vstack((predicted_Stats,predicted_TOS,predicted_HPP, predicted_HVSL, predicted_LVL))
 predicted = np.argmax(summation, axis=1) + 1
 print(predicted.shape)
